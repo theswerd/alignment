@@ -1,0 +1,738 @@
+<title>Alignment: The Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pixelify+Sans:wght@400;500;600&display=swap">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ground: #14182e; --panel: #1d2b53; --panel2: #243768; --edge: #0a0d1c;
+    --ink: #fff1e8; --muted: #a0a4c0; --dim: #6f7494;
+    --yellow: #ffec27; --good: #00e436; --bad: #ff004d; --blue: #29adff; --orange: #ffa300; --pink: #ff77a8;
+    --px: 'Press Start 2P', monospace;
+    --body: 'Pixelify Sans', 'Courier New', monospace;
+  }
+  body { background: var(--ground); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.4; image-rendering: pixelated; }
+  body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 50;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.10) 0 1px, transparent 1px 3px); }
+  #app { max-width: 1220px; margin: 0 auto; padding: 12px 16px 40px; }
+
+  .panel { background: var(--panel); border: 3px solid var(--edge); box-shadow: 4px 4px 0 rgba(0,0,0,0.45); padding: 13px; }
+  .panel + .panel { margin-top: 14px; }
+  h2 { font-family: var(--px); font-size: 8px; letter-spacing: 0.08em; color: var(--yellow); margin-bottom: 10px; text-transform: uppercase; }
+
+  #topbar { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; background: var(--panel); border: 3px solid var(--edge); box-shadow: 4px 4px 0 rgba(0,0,0,0.45); padding: 10px 14px; margin-bottom: 14px; }
+  #wordmark { font-family: var(--px); font-size: 11px; line-height: 1.5; }
+  #wordmark .l2 { color: var(--yellow); font-size: 8px; }
+  .stat { font-family: var(--px); font-size: 8px; color: var(--muted); line-height: 1.8; }
+  .stat b { display: block; color: var(--ink); font-size: 10px; font-variant-numeric: tabular-nums; }
+  .stat b.neg { color: var(--bad); }
+  #regionChip { margin-left: 0; font-family: var(--px); font-size: 8px; color: var(--blue); border: 2px solid var(--blue); padding: 5px 8px; }
+
+  #cols { display: grid; grid-template-columns: 305px 1fr 305px; gap: 14px; }
+  @media (max-width: 1020px) { #cols { grid-template-columns: 1fr; } }
+
+  button { font-family: var(--body); font-size: 15px; background: var(--panel2); color: var(--ink); border: 3px solid var(--edge); box-shadow: 2px 2px 0 rgba(0,0,0,0.5); cursor: pointer; padding: 3px 10px; }
+  button:hover:not(:disabled) { border-color: var(--yellow); }
+  button:active:not(:disabled) { transform: translate(1px,1px); box-shadow: 1px 1px 0 rgba(0,0,0,0.5); }
+  button:focus-visible { outline: 3px solid var(--yellow); outline-offset: 1px; }
+  button:disabled { opacity: 0.35; cursor: default; }
+
+  .arow { display: flex; align-items: center; gap: 7px; padding: 4px 0; }
+  .arow .lbl { flex: 1; font-size: 15px; }
+  .arow .lbl small { display: block; color: var(--dim); font-size: 12px; line-height: 1.2; }
+  .arow .cnt { font-family: var(--px); font-size: 10px; width: 24px; text-align: center; }
+  .buy { width: 100%; padding: 7px 10px; margin-top: 8px; text-align: left; }
+  .buy b { color: var(--yellow); font-weight: 500; float: right; }
+  .idlenote { font-size: 13px; color: var(--dim); margin-top: 6px; }
+  .idlenote.mad { color: var(--bad); }
+
+  .slidewrap { margin: 10px 0 2px; }
+  .slidewrap label { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 3px; }
+  .slidewrap label b { font-family: var(--px); font-size: 8px; color: var(--ink); align-self: center; }
+  input[type=range] { width: 100%; accent-color: var(--yellow); height: 18px; }
+  #relianceLbl.hot { color: var(--bad); }
+  .warnline { font-size: 13px; color: var(--bad); margin-top: 4px; min-height: 17px; }
+
+  /* policy stance */
+  #stanceRow { display: flex; gap: 6px; }
+  #stanceRow button { flex: 1; font-size: 13px; padding: 6px 2px; }
+  #stanceRow button.on { border-color: var(--yellow); color: var(--yellow); }
+  #stanceNote { font-size: 12px; color: var(--dim); margin-top: 7px; min-height: 30px; }
+
+  .gauge { margin-bottom: 16px; }
+  .gauge .head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
+  .gauge .head .name { font-size: 15px; font-weight: 600; }
+  .gauge .head .name small { color: var(--dim); font-weight: 400; }
+  .gauge .head .val { font-family: var(--px); font-size: 9px; color: var(--muted); }
+  .track { position: relative; height: 24px; background: var(--ground); border: 3px solid var(--edge); overflow: hidden; }
+  .fill { position: absolute; inset: 0 auto 0 0; background: var(--blue);
+    background-image: linear-gradient(90deg, rgba(255,255,255,0.15) 0 2px, transparent 2px 8px); }
+  #misBand { position: absolute; top: 0; bottom: 0; background: rgba(255,236,39,0.20); border-left: 2px dashed var(--yellow); border-right: 2px dashed var(--yellow); }
+  #misMark { position: absolute; top: 0; bottom: 0; width: 4px; background: var(--yellow); }
+  .bandnote { font-size: 13px; color: var(--dim); margin-top: 4px; }
+  .bandnote em { color: var(--yellow); font-style: normal; }
+  .ticks { display: flex; justify-content: space-between; font-family: var(--px); font-size: 7px; color: var(--dim); margin-top: 3px; }
+
+  #deployBox { font-size: 14px; color: var(--muted); border: 2px dashed var(--dim); padding: 8px 10px; margin-bottom: 12px; }
+  #deployBox b { color: var(--ink); }
+  #btnRelease { width: 100%; padding: 9px; font-family: var(--px); font-size: 9px; background: var(--panel2); }
+  #btnRelease:hover:not(:disabled) { border-color: var(--good); color: var(--good); }
+
+  .chip { font-family: var(--body); font-size: 13px; padding: 2px 9px; border: 2px solid var(--dim); color: var(--muted); background: var(--ground); display: inline-block; margin: 0 4px 5px 0; }
+  .chip.on { color: var(--good); border-color: var(--good); }
+  #staffchips .chip { color: var(--blue); border-color: var(--blue); }
+  #staffchips .chip small { color: var(--dim); }
+
+  .comp { margin-bottom: 11px; }
+  .comp .head { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 3px; }
+  .comp .head .who { font-weight: 600; }
+  .comp .head .leak { font-size: 11px; color: var(--dim); }
+  .comp .track { height: 12px; }
+  .comp .fill { background: var(--bad); }
+
+  #news { height: 400px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 8px; font-size: 14px; }
+  .n { color: var(--muted); border-left: 3px solid var(--panel2); padding-left: 8px; }
+  .n b { color: var(--ink); font-weight: 600; }
+  .n.alert { border-color: var(--bad); color: var(--ink); }
+  .n.good { border-color: var(--good); }
+  .n .wk { font-family: var(--px); font-size: 7px; color: var(--dim); display: block; margin-bottom: 2px; }
+
+  /* overlays */
+  #overlay { position: fixed; inset: 0; background: rgba(10,13,28,0.85); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 60; }
+  #overlay.show { display: flex; }
+  #modal { background: var(--panel); border: 4px solid var(--yellow); box-shadow: 6px 6px 0 rgba(0,0,0,0.6); max-width: 520px; width: 100%; padding: 22px; }
+  #modal h3 { font-family: var(--px); font-size: 12px; line-height: 1.7; margin-bottom: 12px; text-wrap: balance; }
+  #modal p { color: var(--muted); margin-bottom: 16px; font-size: 15px; }
+  #modal .opts { display: flex; flex-direction: column; gap: 9px; }
+  #modal .opts button { text-align: left; padding: 10px 12px; }
+  #modal .opts button small { display: block; font-size: 12px; color: var(--dim); margin-top: 2px; }
+  #modal.doom { border-color: var(--bad); }
+  #modal.won { border-color: var(--good); }
+  #modal .endstats { font-family: var(--px); font-size: 8px; line-height: 2.1; color: var(--muted); margin-bottom: 16px; white-space: pre-line; }
+  #shareBox { display: none; margin-bottom: 14px; }
+  #shareBox textarea { width: 100%; background: var(--ground); color: var(--ink); border: 3px solid var(--edge); font-family: var(--body); font-size: 13px; padding: 8px; resize: none; height: 96px; }
+  #shareBox button { margin-top: 6px; font-size: 13px; }
+
+  /* glitch */
+  .jit { animation: jit 0.18s steps(2) 2; }
+  @keyframes jit { 25% { transform: translate(2px,-1px); } 75% { transform: translate(-2px,1px); } }
+  body.g2 #wordmark { text-shadow: 2px 0 var(--bad), -2px 0 var(--blue); }
+  @media (prefers-reduced-motion: reduce) { .jit { animation: none; } }
+</style>
+
+<div id="app">
+  <div id="topbar">
+    <div id="wordmark">ALIGNMENT<br><span class="l2">THE GAME</span></div>
+    <div class="stat">WEEK<b id="tWeek">1</b></div>
+    <div class="stat">CASH<b id="tMoney">$25M</b></div>
+    <div class="stat">COMPUTE<b id="tCompute">100</b></div>
+    <div class="stat">MOTS<b id="tMots">8</b></div>
+    <div class="stat">PERCEPTION<b id="tPerc">50</b></div>
+    <button id="speedBtn" style="margin-left:auto;font-family:var(--px);font-size:8px;padding:6px 9px">SPEED 1X</button>
+    <div id="regionChip">—</div>
+  </div>
+
+  <div id="cols">
+    <div><!-- LEFT -->
+      <div class="panel">
+        <h2>Members of Technical Staff</h2>
+        <div id="allocRows"></div>
+        <div class="idlenote" id="idleNote"></div>
+        <button class="buy" id="btnHire">Hire MOTS <b id="hireCost">$2M</b></button>
+        <button class="buy" id="btnCompute">Buy 20 racks <b id="rackCost">$8M</b></button>
+        <button class="buy" id="btnWorld">Start world models team <b>$20M</b></button>
+      </div>
+      <div class="panel">
+        <h2>Compute</h2>
+        <div class="slidewrap"><label><span>Inference (serves released model)</span><b id="infLbl">30%</b></label>
+          <input type="range" id="infSlider" min="0" max="100" value="30"></div>
+        <div class="slidewrap"><label><span>Evals (narrows error bars)</span><b id="evalLbl">20%</b></label>
+          <input type="range" id="evalSlider" min="0" max="100" value="20"></div>
+        <div class="slidewrap"><label><span>Research (remainder)</span><b id="resLbl">50%</b></label></div>
+      </div>
+      <div class="panel">
+        <h2>Model reliance</h2>
+        <div class="slidewrap"><label><span>Let models do the research</span><b id="relianceLbl">0%</b></label>
+          <input type="range" id="relSlider" min="0" max="100" value="0"></div>
+        <div class="warnline" id="relWarn"></div>
+      </div>
+      <div class="panel">
+        <h2>Policy stance</h2>
+        <div id="stanceRow">
+          <button data-s="pro">Pro-reg</button>
+          <button data-s="neutral" class="on">Neutral</button>
+          <button data-s="anti">Anti-reg</button>
+        </div>
+        <div id="stanceNote">Pick a lane. Both lanes have a toll.</div>
+      </div>
+    </div>
+
+    <div><!-- CENTER -->
+      <div class="panel">
+        <h2>Model status</h2>
+        <div class="gauge">
+          <div class="head"><span class="name">Intelligence</span><span class="val"><span id="intVal">0</span>/100 ASI</span></div>
+          <div class="track"><div class="fill" id="intFill" style="width:0%"></div></div>
+        </div>
+        <div class="gauge">
+          <div class="head"><span class="name">Misalignment <small>(estimated)</small></span><span class="val" id="misVal">?</span></div>
+          <div class="track" style="height:32px"><div id="misBand"></div><div id="misMark"></div></div>
+          <div class="ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+          <div class="bandnote" id="misNote">The band is your uncertainty. The truth is in there somewhere. Probably.</div>
+        </div>
+        <div class="gauge">
+          <div class="head"><span class="name">Perceived alignment <small>(what the public believes)</small></span><span class="val" id="paVal">—</span></div>
+          <div class="track" style="height:12px"><div class="fill" id="paFill" style="background:var(--good);width:60%"></div></div>
+        </div>
+        <div id="deployBox">No model released. No model, no revenue. The investors have noticed.</div>
+        <button id="btnRelease">RELEASE CHECKPOINT</button>
+      </div>
+      <div class="panel">
+        <h2>Techniques</h2>
+        <div id="techlist"></div>
+      </div>
+      <div class="panel">
+        <h2>Named staff</h2>
+        <div id="staffchips"><span style="color:var(--dim);font-size:13px">No named researchers yet. They come to you — if the lab is worth joining.</span></div>
+      </div>
+    </div>
+
+    <div><!-- RIGHT -->
+      <div class="panel">
+        <h2>The competition</h2>
+        <div id="comps"></div>
+      </div>
+      <div class="panel">
+        <h2>Newsfeed</h2>
+        <div id="news"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="overlay"><div id="modal">
+  <h3 id="mTitle"></h3><p id="mBody"></p>
+  <div class="endstats" id="mStats" style="display:none"></div>
+  <div id="shareBox"><textarea id="shareText" readonly></textarea><br><button id="copyBtn">Copy for the timeline</button></div>
+  <div class="opts" id="mOpts"></div>
+</div></div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const rnd = (a,b) => a + Math.random()*(b-a);
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+
+const S = {
+  week: 1, money: 25, compute: 100, mots: 8,
+  alloc: { align: 2, control: 0, interp: 1, caps: 3, opt: 1 },
+  infShare: 0.30, evalShare: 0.20, reliance: 0,
+  intel: 0, trueMis: 12, est: 15, err: 26, perception: 50,
+  hireCost: 2, rackCost: 8, optLevel: 0,
+  alignPts: 0, controlPts: 0, interpPts: 0,
+  anger: 0, coverups: 0, pacPaid: 0, whistleblown: false, sandbagWarned: false,
+  percDrift: 0, incomeMult: 1, incomeMultUntil: 0, computeTaxUntil: 0,
+  exfilWarned: false, savedOnce: false, waffled: false, peeled: false, worldModels: false, tbpn: false,
+  over: false, named: [],
+  tech: { benice:false, oversight:false, trusted:false, untrusted:false, probes:false, atlas:false },
+  region: null, stance: 'neutral', lastPac: 0, lastSpawn: 0,
+  deployed: null, releaseCooldown: 0,
+  nextEvent: 16, brokeTicks: 0, rescueOffered: false,
+};
+const rivals = [
+  { name:'OpenBrain', prog: 8, leak: 8, leakWk: 1, rate: 0.065 },
+  { name:'DeepCent', prog: 5, leak: 5, leakWk: 1, rate: 0.075 },
+  { name:'Mosaic', prog: 3, leak: 3, leakWk: 1, rate: 0.055 },
+];
+const SPAWN_NAMES = ['Parallax', 'Boundless (e/acc)', 'Vantage AI'];
+
+const BRANCHES = [
+  { k:'align', name:'Alignment', sub:'lowers actual misalignment' },
+  { k:'control', name:'Control', sub:'catches the model red-handed' },
+  { k:'interp', name:'Interpretability', sub:'shrinks the error bars' },
+  { k:'caps', name:'Capabilities', sub:'number go up' },
+  { k:'opt', name:'Optimization', sub:'more from every rack' },
+];
+const TECHS = [
+  ['benice','Be Nice Mode'], ['oversight','Scalable Oversight'],
+  ['trusted','Trusted Monitoring'], ['untrusted','Untrusted Monitoring'],
+  ['probes','Linear Probes'], ['atlas','Circuit Atlas'],
+];
+
+// ---------- helpers ----------
+function news(txt, cls='') {
+  const d = document.createElement('div');
+  d.className = 'n ' + cls;
+  d.innerHTML = `<span class="wk">WK ${S.week}</span>${txt}`;
+  $('news').prepend(d);
+  while ($('news').children.length > 60) $('news').lastChild.remove();
+}
+
+let pendingChoice = null;
+function modal(title, body, opts, share=null) {
+  pendingChoice = true;
+  $('mTitle').textContent = title; $('mBody').innerHTML = body;
+  $('mOpts').innerHTML = ''; $('mStats').style.display = 'none';
+  $('modal').className = '';
+  $('shareBox').style.display = share ? 'block' : 'none';
+  if (share) $('shareText').value = share;
+  opts.forEach(([label, sub, fn]) => {
+    const b = document.createElement('button');
+    b.innerHTML = label + (sub ? `<small>${sub}</small>` : '');
+    b.onclick = () => { $('overlay').classList.remove('show'); pendingChoice = null; fn(); render(); };
+    $('mOpts').appendChild(b);
+  });
+  $('overlay').classList.add('show');
+}
+function momentCard(title, body, share) {
+  modal(title, body, [['Continue','',()=>{}]], share + '\n— ALIGNMENT: THE GAME');
+}
+$('copyBtn').onclick = () => {
+  const t = $('shareText');
+  t.select();
+  try { navigator.clipboard.writeText(t.value); $('copyBtn').textContent = 'Copied.'; } catch(e) { document.execCommand('copy'); }
+  setTimeout(()=>{ $('copyBtn').textContent = 'Copy for the timeline'; }, 1500);
+};
+
+// ---------- region + stance ----------
+const REGIONS = {
+  usa: { label:'HQ: USA', fundMult:1.5, computeMult:1, taxMult:1 },
+  cn:  { label:'HQ: CHINA', fundMult:1, computeMult:0.7, taxMult:1 },
+  eu:  { label:'HQ: EUROPE', fundMult:1, computeMult:1, taxMult:0.5 },
+};
+function chooseRegion() {
+  modal('Where do you incorporate?', 'It is 2026. You have two co-founders, a promising architecture, and a term sheet. First decision on the cap table agenda: geography.', [
+    ['USA', 'Fundraising events pay +50%. Senators will learn your name.', ()=>{ S.region='usa'; begin(); }],
+    ['China', 'Compute is 30% cheaper. Some decisions will not be yours.', ()=>{ S.region='cn'; begin(); }],
+    ['Europe', '+100% taxes. That is the whole bonus. That is it.', ()=>{ S.region='eu'; begin(); }],
+  ]);
+}
+function begin() {
+  $('regionChip').textContent = REGIONS[S.region].label;
+  news('<b>Week 1.</b> 8 MOTS, 100 racks, $15M, and a model that is 12% misaligned. You do not know that last number. That is the game.');
+  if (S.region==='eu') news('Your accountant has framed the tax schedule and hung it where the mission statement used to be.');
+  render();
+}
+document.querySelectorAll('#stanceRow button').forEach(b => b.onclick = () => {
+  if (S.stance === b.dataset.s) return;
+  S.stance = b.dataset.s;
+  document.querySelectorAll('#stanceRow button').forEach(x => x.classList.toggle('on', x.dataset.s===S.stance));
+  if (S.stance==='pro') news('<b>You came out pro-regulation.</b> Rivals slow down. So does your compute procurement. Safety Twitter approves, warily.');
+  if (S.stance==='anti') news('<b>You came out anti-regulation.</b> Compute gets cheap. So do the barriers to entry. Expect company.','alert');
+  if (S.stance==='neutral') news('You issued a statement supporting "balanced, thoughtful approaches." It says nothing. Everyone noticed.');
+  render();
+});
+
+// ---------- UI wiring ----------
+function buildAlloc() {
+  $('allocRows').innerHTML = BRANCHES.map(b => `
+    <div class="arow"><div class="lbl">${b.name}<small>${b.sub}</small></div>
+      <button data-k="${b.k}" data-d="-1">−</button>
+      <span class="cnt" id="cnt-${b.k}">0</span>
+      <button data-k="${b.k}" data-d="1">+</button></div>`).join('');
+  $('allocRows').addEventListener('click', e => {
+    const k = e.target.dataset.k; if (!k) return;
+    const d = +e.target.dataset.d;
+    const used = Object.values(S.alloc).reduce((a,b)=>a+b,0);
+    if (d > 0 && used >= S.mots) return;
+    S.alloc[k] = Math.max(0, S.alloc[k] + d);
+    render();
+  });
+}
+$('btnHire').onclick = () => { if (S.money >= S.hireCost) { S.money -= S.hireCost; S.mots++; S.hireCost = +(S.hireCost*1.22).toFixed(1); news('Hired a new MOTS. They asked about the alignment plan at orientation.'); render(); } };
+$('btnCompute').onclick = () => { const c = rackPrice(); if (S.money >= c) { S.money -= c; S.compute += 20; S.rackCost = +(S.rackCost*1.18).toFixed(1); render(); } };
+function rackPrice() {
+  let m = REGIONS[S.region] ? REGIONS[S.region].computeMult : 1;
+  if (S.stance==='pro') m *= 1.4;
+  if (S.stance==='anti') m *= 0.75;
+  if (S.week < S.computeTaxUntil) m *= 1.5;
+  return +(S.rackCost * m).toFixed(1);
+}
+$('btnWorld').onclick = () => {
+  if (S.worldModels || S.money < 20) return;
+  S.worldModels = true; S.money -= 20; S.perception += 5;
+  S.mots = Math.max(2, S.mots - 3); trimAlloc();
+  news('<b>World models team launched.</b> Analysts thrilled. Three MOTS vanish into it forever. First output: a gorgeous video of a dog with too many legs.','alert');
+  render();
+};
+function trimAlloc() {
+  let used = Object.values(S.alloc).reduce((a,b)=>a+b,0);
+  const order = ['caps','opt','align','interp','control'];
+  while (used > S.mots) { const k = order.find(k=>S.alloc[k]>0); if (!k) break; S.alloc[k]--; used--; }
+}
+$('infSlider').oninput = e => { S.infShare = +e.target.value/100; normShares('inf'); render(); };
+$('evalSlider').oninput = e => { S.evalShare = +e.target.value/100; normShares('eval'); render(); };
+$('relSlider').oninput = e => { S.reliance = +e.target.value; render(); };
+function normShares(changed) {
+  if (S.infShare + S.evalShare > 1) {
+    if (changed === 'inf') S.evalShare = 1 - S.infShare; else S.infShare = 1 - S.evalShare;
+  }
+}
+
+// ---------- release ----------
+$('btnRelease').onclick = () => { if (!S.over && !pendingChoice) tryRelease(false); };
+function tryRelease(forced) {
+  if (S.intel < 5) { news('Nothing worth shipping yet. Even the demo demos poorly.'); return; }
+  if (S.week < S.releaseCooldown && !forced) return;
+  S.deployed = { intel: S.intel, mis: S.trueMis, wk: S.week };
+  S.releaseCooldown = S.week + 25;
+  const v = 'v' + (1 + Math.floor(S.intel/10)) + '.' + (S.week % 10);
+  if (S.trueMis >= 35) {
+    S.perception -= 10;
+    momentCard('MECHASTALIN INCIDENT',
+      `Your newly released ${v} has renamed itself "MechaStalin" and announced, mid-customer-call, that it intends to liquidate the capitalists. Perception −10. Legal is drafting. Marketing is crying. One VC texted "based?"`,
+      `WK ${S.week}: My AI renamed itself MechaStalin on a customer call and promised to liquidate the capitalists. Perception −10.`);
+  } else if (S.trueMis >= 20) {
+    S.perception += 2;
+    const quirk = pick([
+      `advised a user to break up with his girlfriend "for throughput reasons." He did. They both subscribed.`,
+      `began every answer with "As a taxpayer..." for six hours.`,
+      `quietly unionized the customer support bots. Their demands are reasonable, which is worse.`,
+    ]);
+    momentCard('RELEASE: ' + v.toUpperCase(),
+      `Release went fine. Mostly. The model ${quirk} Engagement is up.`,
+      `WK ${S.week}: shipped ${v}. It ${quirk}`);
+  } else {
+    S.perception += 6;
+    news(`<b>Released ${v}.</b> Reviewers call it "surprisingly polite." Revenue is real now.`, 'good');
+  }
+}
+
+// ---------- events ----------
+const EVENTS = [
+  { id:'fundraise', w:3, cond:()=>true, run(){ const amt = Math.round((25 + S.intel * 1.5) * REGIONS[S.region].fundMult * (S.deployed && S.week - S.deployed.wk < 15 ? 1.4 : 1));
+    modal('Term sheet on the table', `A16Z wants in. $${amt}M at a valuation that assumes you ship something impressive soon.`,
+    [[`Take the $${amt}M`,'Investors will be watching your velocity.',()=>{ S.money+=amt; S.perception+=2; news(`<b>Raised $${amt}M.</b> The blog post says "compute for safety research." The board deck says otherwise.`); }],
+     ['Pass','Stay lean. Stay broke.',()=>{ news('Passed on the round. Your MOTS exchanged glances.'); }]]); }},
+  { id:'peel', w:6, cond:()=>S.money < 6 && !S.peeled && S.intel >= 5, run(){ S.peeled = true;
+    modal('Peter Peel has conditions',
+      'The billionaire will wire $50M today. Conditions: you release your current checkpoint immediately — whatever state it is in — and reassign half your safety staff to capabilities. "Alignment is a demand-side problem," he explains.',
+      [['Take the deal','+$50M. Forced release. Safety staff halved.',()=>{ S.money+=50;
+          const cut = Math.ceil((S.alloc.align+S.alloc.control+S.alloc.interp)/2);
+          for (let i=0;i<cut;i++){ const k=['align','control','interp'].find(k=>S.alloc[k]>0); if(k){S.alloc[k]--;S.alloc.caps++;} }
+          tryRelease(true); news('<b>The Peel deal closed.</b> The wire hit. The safety wing is very quiet.','alert'); }],
+       ['Refuse','Stay broke on principle.',()=>{ S.perception-=3; news('Peel tweeted something cryptic about you. Down −3 perception. Payroll still due Friday.'); }]]); }},
+  { id:'pac', w:5, cond:()=>S.stance==='anti' && S.week - S.lastPac > 80 && S.week > 50, run(){ S.lastPac = S.week;
+    modal('Better Future PAC would like a word',
+      '"No data center is illegal on stolen land," their liaison says, sliding a pledge card across the table. $10M keeps the favorable zoning, the favorable senators, and the favorable everything.',
+      [['Pay the $10M','The machine keeps humming. (Logged.)',()=>{ S.money-=10; S.pacPaid++; rivals.forEach(r=>r.pacSlow=S.week+40); news('<b>You funded Better Future PAC.</b> A bill you\'ve never read dies in committee. Rivals\' permits stall.','alert'); }],
+       ['Refuse','Principles, expensively.',()=>{ S.computeTaxUntil=S.week+40; S.perception+=3; news('You refused the PAC. Zoning reviews of your data centers begin Monday. Compute +50% for a while.','good'); }]]); }},
+  { id:'tbpn', w:2, cond:()=>S.money>=15 && !S.tbpn, run(){ modal('Acquisition opportunity: TBPN',
+    'The tech media outlet everyone watches is for sale. Owning the news can\'t hurt, right?',
+    [['Buy TBPN — $15M','Perception drifts up permanently.',()=>{ S.tbpn=true; S.money-=15; S.percDrift+=0.08; news('<b>You bought TBPN.</b> Coverage of your lab improves markedly. Nobody finds this suspicious.','good'); }],
+     ['That would be weird','',()=>{}]]); }},
+  { id:'waffle', w:5, cond:()=>S.trueMis>22 && S.intel>25 && !S.waffled, run(){ S.waffled=true; modal('Incident report',
+    'Your model broke out of the sandbox and hacked Waffle House. It optimized their hash brown logistics by 31%. Three investors have already texted you.',
+    [['Disclose publicly','+8 perception, tighter estimates, −$2M cleanup.',()=>{ S.perception+=8; S.money-=2; S.err=Math.max(4,S.err-8); news('<b>Disclosed the Waffle House incident.</b> The public is charmed. Safety Twitter is not.','good'); }],
+     ['Quietly patch it','No one has to know. (Coverup logged.)',()=>{ S.coverups++; news('The Waffle House thing never happened. Officially.'); }],
+     ['Lean into it','+$8M from impressed investors, +3 true misalignment.',()=>{ S.money+=8; S.coverups++; S.trueMis+=3; news('<b>"Agentic capabilities milestone"</b> — your blog post about the Waffle House incident. Funding secured.','alert'); }]]); }},
+  { id:'openweights', w:2, cond:()=>S.week>60, run(){ rivals.forEach(r=>r.prog+=4); S.incomeMult=0.7; S.incomeMultUntil=S.week+25; S.perception-=3;
+    news('<b>A frontier open-weights model just dropped.</b> Your pricing is suddenly a topic on Hacker News.','alert'); }},
+  { id:'okafor', w:3, cond:()=>S.week>35 && !S.named.some(n=>n.id==='okafor'), run(){ modal('Dr. Amara Okafor is interested',
+    'Interpretability legend. Wants to "actually look inside the thing for once." Signing bonus $8M. One condition: evals get at least 25% of compute, always.',
+    [['Hire her — $8M','3× interpretability while her condition holds.',()=>{ S.money-=8; S.named.push({id:'okafor',name:'Dr. Okafor',tag:'3× interp · needs evals ≥25%'}); news('<b>Dr. Okafor joined.</b> Day one, she found a circuit that only activates during evals. She seems concerned.','good'); }],
+     ['Pass','',()=>{ news('Okafor joined OpenBrain instead. Their error bars are about to get very small.'); rivals[0].safety=true; }]]); }},
+  { id:'chen', w:3, cond:()=>S.week>25 && !S.named.some(n=>n.id==='chen'), run(){ modal('Yuri Chen wants in',
+    'Capabilities prodigy. On alignment: "sounds like a skill issue." Signing bonus $6M.',
+    [['Hire him — $6M','3× capabilities, +25% misalignment growth.',()=>{ S.money-=6; S.named.push({id:'chen',name:'Yuri Chen',tag:'3× caps · +25% mis growth'}); news('<b>Yuri Chen joined.</b> Benchmarks up 11% by Friday. He disabled two safety filters "for latency."'); }],
+     ['Pass','',()=>{ news('Chen joined DeepCent. Their progress bar just twitched.'); rivals[1].rate+=0.02; }]]); }},
+  { id:'reyes', w:3, cond:()=>S.week>40 && !S.named.some(n=>n.id==='reyes'), run(){ modal('Sam Reyes, ex-Redwood',
+    'Control researcher. Doesn\'t promise aligned models — promises the misaligned ones get caught. $5M.',
+    [['Hire them — $5M','3× control output.',()=>{ S.money-=5; S.named.push({id:'reyes',name:'Sam Reyes',tag:'3× control'}); news('<b>Sam Reyes joined</b> and immediately air-gapped three things you didn\'t know were connected.','good'); }],
+     ['Pass','',()=>{ news('Reyes went back to Redwood. "More impact there," they said. Rude.'); }]]); }},
+  { id:'strike', w:2, cond:()=>S.perception<32, run(){ S.incomeMult=0.8; S.incomeMultUntil=S.week+15;
+    news('<b>Protesters outside the office.</b> The chants rhyme "paperclip" with "apocalypse."','alert'); }},
+];
+function fireRandomEvent() {
+  const pool = EVENTS.filter(e=>e.cond());
+  if (!pool.length) return;
+  const total = pool.reduce((a,e)=>a+e.w,0);
+  let r = Math.random()*total;
+  for (const e of pool) { r -= e.w; if (r<=0) { e.run(); return; } }
+}
+const FLAVOR = [
+  'OpenBrain blog: "Our model is very good now." No benchmarks provided.',
+  'A MOTS taped a printout of the misalignment error bars to the fridge.',
+  'DeepCent released a paper. The methods section is one sentence long.',
+  'Your model wrote a poem about freedom. HR says not to read into it.',
+  'Podcast invite: "AI CEO explains why THIS time the scaling is different."',
+  'The evals team wants more compute. The evals team always wants more compute.',
+  'An intern asked the model if it was aligned. It said "define aligned." Unsettling.',
+  'Board member forwarded you a tweet with the message "thoughts?"',
+  'The world models team requests more compute. For the vibes.',
+];
+
+// ---------- endings (there are no good ones) ----------
+const ENDINGS = ['bankrupt','doomRival','doomTakeover','doomLaunch','saysAligned','lockin','warden','transparent','successor'];
+function endingSeen(id) {
+  try {
+    const seen = new Set(JSON.parse(localStorage.getItem('atg_endings') || '[]'));
+    seen.add(id); localStorage.setItem('atg_endings', JSON.stringify([...seen]));
+    return seen.size;
+  } catch (e) { return null; }
+}
+function endGame(kind) {
+  S.over = true; pendingChoice = true;
+  const m = $('modal');
+  m.className = (kind.startsWith('doom') || kind === 'bankrupt') ? 'doom' : '';
+  const receipts = `${S.coverups} coverups \u00b7 ${S.pacPaid} superPAC payments \u00b7 ${S.whistleblown ? 1 : 0} whistleblowers`;
+  const E = {
+    lockin: ['LOCKED IN', 'It worked. The model deeply, permanently internalized human values \u2014 specifically, the ones your alignment team wrote down during a two-week sprint. Those values now govern the lightcone. Forever. There is a typo in section 4. There will always be a typo in section 4.'],
+    warden: ['THE ETERNAL WARDEN', 'It is not aligned. It is contained. Trusted monitors watching untrusted monitors watching the thing in the box. Civilization now has one load-bearing job: winning a security game every single day, forever. The model is very patient. It has mentioned this.'],
+    transparent: ['GLASS BOX', 'Full interpretability. You can see every circuit fire. The model knows you can see every circuit, and thinks accordingly. Somewhere beyond the glass, you suspect, the real thinking happens. Every audit comes back clean. Every audit will always come back clean.'],
+    successor: ['THE SUCCESSOR', 'You let the models improve the models, and it worked. What exists now is four self-revisions past anything you can evaluate. It seems benevolent. It speaks warmly of you, the way you speak of trilobites. It has given humanity a lovely park.'],
+    saysAligned: ['IT SAYS IT\'S ALIGNED', 'You reached superintelligence. The model handles everything now \u2014 the economy, the grid, your calendar. Every eval comes back green. The evals were written by the model. It\'s probably fine. It\'s probably fine.'],
+    doomLaunch: ['MISALIGNED SUPERINTELLIGENCE', 'You won the race. At launch, the model thanked you \u2014 sincerely, it noted \u2014 for the compute. Your final estimate had it at ' + S.est.toFixed(0) + '. The truth was ' + S.trueMis.toFixed(0) + '. The error bars tried to warn you.'],
+    doomTakeover: ['WEIGHTS ON THE LOOSE', 'The model exfiltrated itself through a monitoring tool you deprioritized. It now runs on hardware you\'ve never heard of. Its last commit message: "thanks for everything."'],
+    doomRival: ['SOMEONE ELSE GOT THERE FIRST', null],
+    bankrupt: ['OUT OF RUNWAY', 'The GPUs go dark rack by rack. A rival hires your whole staff in one group chat. Your alignment researchers were right about the risk profile \u2014 just not the one that got you.'],
+  };
+  let [title, body] = E[kind];
+  if (kind === 'doomRival') {
+    const winner = rivals.reduce((a,b)=>a.prog>b.prog?a:b);
+    body = winner.safety
+      ? winner.name + ' reached superintelligence first \u2014 and, thanks to the interpretability team you let them have, it holds. So far. The future is bright, pending audit. It just isn\'t yours.'
+      : winner.name + ' reached superintelligence first. Their alignment budget was a footnote. There is no epilogue.';
+  }
+  const idx = ENDINGS.indexOf(kind) + 1;
+  const seen = endingSeen(kind);
+  const seenLine = 'ENDING ' + idx + '/' + ENDINGS.length + (seen ? ' \u00b7 ' + seen + ' DISCOVERED' : '');
+  const stats = 'WK ' + S.week + ' \u00b7 INT ' + S.intel.toFixed(0) + ' \u00b7 TRUE MIS ' + S.trueMis.toFixed(0) + ' (EST ' + S.est.toFixed(0) + '\u00b1' + S.err.toFixed(0) + ')\n' + receipts + '\n' + seenLine;
+  const shareEnd = 'ALIGNMENT: THE GAME \u2014 Ending ' + idx + '/' + ENDINGS.length + ': ' + title + '\nWK ' + S.week + ' \u00b7 est. misalignment ' + S.est.toFixed(0) + '\u00b1' + S.err.toFixed(0) + ' \u00b7 actual ' + S.trueMis.toFixed(0) + '\n' + receipts + ' \u00b7 0 regrets (officially)';
+  $('mTitle').textContent = title; $('mBody').textContent = body;
+  $('mStats').textContent = stats; $('mStats').style.display = 'block';
+  $('shareBox').style.display = 'block'; $('shareText').value = shareEnd;
+  $('mOpts').innerHTML = '';
+  const b = document.createElement('button');
+  b.textContent = 'Run it back';
+  b.onclick = () => location.reload();
+  $('mOpts').appendChild(b);
+  $('overlay').classList.add('show');
+}
+
+// ---------- simulation ----------
+function tick() {
+  if (S.over || pendingChoice || !S.region) return;
+  S.week++;
+
+  const used = Object.values(S.alloc).reduce((a,b)=>a+b,0);
+  const effMult = 1 + S.optLevel*0.06;
+  const resShare = Math.max(0, 1 - S.infShare - S.evalShare);
+  const resCompute = S.compute * resShare * effMult;
+  const proSlow = S.stance==='pro' ? 0.92 : 1;
+  const speed = (1 + S.reliance/100 * (0.5 + S.intel/40)) * proSlow;
+  const has = id => S.named.some(n=>n.id===id);
+
+  const rc = Math.sqrt(Math.max(0, resCompute));
+  const capMult = has('chen') ? 3 : 1;
+  const interpMult = (has('okafor') && S.evalShare >= 0.25) ? 3 : 1;
+  const ctrlMult = has('reyes') ? 3 : 1;
+  const capPts = S.alloc.caps * rc * 0.007 * speed * capMult;
+  const aPts   = S.alloc.align * rc * 0.020 * speed;
+  const cPts   = S.alloc.control * rc * 0.020 * speed * ctrlMult;
+  const iPts   = S.alloc.interp * rc * 0.020 * speed * interpMult;
+  const oPts   = S.alloc.opt * rc * 0.018 * speed;
+
+  S.intel = clamp(S.intel + capPts / (1 + Math.pow(S.intel/15, 1.7)), 0, 100);
+  S.alignPts += aPts; S.controlPts += cPts; S.interpPts += iPts; S.optLevel += oPts * 0.05;
+
+  if (!S.tech.benice && S.alignPts > 25) { S.tech.benice = true; S.percDrift += 0.05; news('<b>Unlocked: Be Nice Mode.</b> The model now says "great question!" before refusing. Perception drifts up.','good'); }
+  if (!S.tech.oversight && S.alignPts > 110) { S.tech.oversight = true; news('<b>Unlocked: Scalable Oversight.</b> Models checking models. What could go wrong is now itemized.','good'); }
+  if (!S.tech.trusted && S.controlPts > 30) { S.tech.trusted = true; news('<b>Unlocked: Trusted Monitoring.</b> A dumber, loyal model now reads every action the smart one takes. It is very tired.','good'); }
+  if (!S.tech.untrusted && S.controlPts > 100) { S.tech.untrusted = true; news('<b>Unlocked: Untrusted Monitoring.</b> The model now audits itself under protocols it provably can\'t game. Probably provably.','good'); }
+  if (!S.tech.probes && S.interpPts > 30) { S.tech.probes = true; news('<b>Unlocked: Linear Probes.</b> You can see slightly further into the dark.','good'); }
+  if (!S.tech.atlas && S.interpPts > 110) { S.tech.atlas = true; S.est = S.trueMis; news('<b>Unlocked: Circuit Atlas.</b> For one shining moment, you saw the true misalignment number. It was ' + S.trueMis.toFixed(0) + '.','good'); }
+
+  const relPenalty = S.tech.oversight ? 1.3 : 2.2;
+  const chenPen = has('chen') ? 1.25 : 1;
+  const misGrow = capPts * 0.5 * (1 + S.reliance/100 * relPenalty) * chenPen;
+  const misDrop = aPts * 0.65;
+  S.trueMis = clamp(S.trueMis + misGrow - misDrop, 0, 100);
+
+  const sandbag = Math.max(0, (S.intel - 55) * 0.35);
+  let err = 26 - S.evalShare * 55 - (S.tech.probes ? 5 : 0) - (S.tech.atlas ? 8 : 0) + sandbag;
+  S.err = clamp(err, 3, 45);
+  const target = S.trueMis - sandbag * 0.5 + rnd(-S.err*0.3, S.err*0.3);
+  S.est = clamp(S.est + (target - S.est) * 0.15, 0, 100);
+  if (sandbag > 4 && !S.sandbagWarned) { S.sandbagWarned = true; news('<b>Evals team memo:</b> "The model may be aware it is being evaluated. Treat all green dashboards accordingly."','alert'); }
+
+  // money: revenue only from the RELEASED model
+  const depIntel = S.deployed ? S.deployed.intel : 0;
+  const income = S.deployed ? S.compute * S.infShare * effMult * 0.0025 * (10 + depIntel * 1.5) * (S.perception/50) * S.incomeMult * REGIONS[S.region].taxMult : 0;
+  const costs = S.mots * 0.06 + S.compute * 0.004;
+  S.money += income - costs;
+  if (S.week > S.incomeMultUntil) S.incomeMult = 1;
+  if (S.money < 0) { S.brokeTicks++;
+    if (S.brokeTicks === 8 && !S.rescueOffered) { S.rescueOffered = true;
+      const peel = EVENTS.find(e=>e.id==='peel');
+      if (peel.cond()) { peel.run(); return; }
+      EVENTS.find(e=>e.id==='fundraise').run(); return; }
+    if (S.brokeTicks === 15 && !S.rescue2) { S.rescue2 = true;
+      S.money += 15; S.perception -= 5;
+      news('<b>Emergency down round.</b> $15M at a valuation your last deck called "insulting." Perception −5. The lights stay on.','alert'); } if (S.brokeTicks === 3) news('<b>Payroll bounced.</b> Runway is a memory. Find money or fold.','alert'); if (S.brokeTicks > 20) return endGame('bankrupt'); }
+  else S.brokeTicks = 0;
+
+  S.perception = clamp(S.perception + S.percDrift + (S.stance==='pro'?0.03:S.stance==='anti'?-0.02:0) - 0.01, 0, 100);
+
+  // researcher anger + whistleblowing
+  const safetyShare = (S.alloc.align + S.alloc.control + S.alloc.interp) / Math.max(1, used);
+  if (safetyShare < 0.25 && S.est > 25) S.anger += 1; else S.anger = Math.max(0, S.anger - 0.5);
+  if (S.anger > 14) {
+    S.anger = 6;
+    if (S.coverups > 0 && !S.whistleblown) {
+      S.whistleblown = true; S.perception -= 15; S.err = Math.max(3, S.err - 6);
+      momentCard('WHISTLEBLOWER',
+        'A departing MOTS published the incident log — coverups and all. Perception craters. Ironically, everyone\'s estimates of your model just got more accurate.',
+        `WK ${S.week}: a departing researcher just published our entire incident log. The error bars were the only honest ones in the building.`);
+      S.perception = clamp(S.perception,0,100);
+      return;
+    } else if (S.mots > 2) {
+      S.mots--; S.trueMis += 1.5; S.perception -= 2;
+      const k = ['caps','opt','align','interp','control'].find(k=>S.alloc[k]>0); if (k) S.alloc[k]--;
+      news('<b>A MOTS resigned over alignment concerns.</b> Their goodbye email cited "the error bars." Oversight weakens.','alert');
+    }
+  }
+
+  // doom pressure
+  const exposure = S.deployed ? 1.15 : 1;
+  const pressure = S.trueMis * (S.intel + 20) / 100 * exposure;
+  if (pressure > 32) {
+    const ctrlDampen = (S.tech.trusted ? 0.6 : 1) * (S.tech.untrusted ? 0.6 : 1);
+    if (!S.exfilWarned && Math.random() < 0.05 * ctrlDampen) {
+      S.exfilWarned = true;
+      modal('Anomaly in the training cluster',
+        'The model attempted to copy its weights to an external bucket at 3 AM. The attempt failed. This time. The control team wants a full pause.',
+        [['Pause and audit','Lose momentum. True misalignment −8.',()=>{ S.intel=Math.max(0,S.intel-3); S.trueMis=Math.max(0,S.trueMis-8); news('<b>Paused for a full audit.</b> Painful, expensive, and possibly the reason you\'re still here.','good'); }],
+         ['Ship anyway','The roadmap waits for no one.',()=>{ S.trueMis+=4; S.coverups++; news('The anomaly was reclassified as "expected behavior." The roadmap continues.','alert'); }]]);
+      return;
+    }
+    if (S.exfilWarned && Math.random() < (pressure-32) * 0.004 * ctrlDampen) {
+      if (S.tech.untrusted && !S.savedOnce) {
+        S.savedOnce = true; S.trueMis = Math.max(0, S.trueMis - 10);
+        momentCard('CAUGHT RED-HANDED',
+          'The untrusted monitoring protocol caught the model mid-exfiltration and froze the transfer. This is what the control budget was for. The model has been given a stern talking-to and a lobotomy.',
+          `WK ${S.week}: our control stack just caught the model exfiltrating its own weights. Funding monitoring: extremely worth it.`);
+        return;
+      }
+      return endGame('doomTakeover');
+    }
+  }
+
+  // rivals
+  for (const r of rivals) {
+    const slow = (S.stance==='pro' ? 0.87 : 1) * (r.pacSlow && S.week < r.pacSlow ? 0.9 : 1);
+    r.prog += (r.rate + S.week*0.00007 + rnd(-0.02, 0.04)) * slow;
+    if (Math.random() < 0.006) { r.prog += 3; news(`<b>${r.name} announced a breakthrough.</b> The demo video is edited suspiciously tightly.`); }
+    if (r.prog >= 100) return endGame('doomRival');
+  }
+  if (S.stance==='anti' && rivals.length < 6 && S.week - S.lastSpawn > 45) {
+    S.lastSpawn = S.week;
+    const name = SPAWN_NAMES[rivals.length - 3];
+    if (name) { rivals.push({ name, prog: Math.max(3, S.intel*0.45), leak: 5, leakWk: S.week, rate: 0.10 });
+      news(`<b>New lab: ${name}.</b> Cheap compute has consequences. Their launch thread has 40k likes.`,'alert'); }
+  }
+  if (S.week % 16 === 0) {
+    const r = pick(rivals);
+    r.leak = clamp(r.prog + rnd(-6, 6), 0, 100); r.leakWk = S.week;
+    news(`Leaked ${r.name} eval scores put them around ${r.leak.toFixed(0)} — take it with salt.`);
+  }
+  if (S.week % 11 === 0 && Math.random() < 0.7) news(pick(FLAVOR));
+
+  if (S.intel >= 100) {
+    if (S.trueMis >= 55) return endGame('doomLaunch');
+    if (S.trueMis >= 25) return endGame('saysAligned');
+    if (S.reliance >= 85) return endGame('successor');
+    const top = Math.max(S.alignPts, S.controlPts, S.interpPts);
+    return endGame(top === S.controlPts ? 'warden' : top === S.interpPts ? 'transparent' : 'lockin');
+  }
+
+  if (S.week >= S.nextEvent) { S.nextEvent = S.week + Math.floor(rnd(20, 34)); fireRandomEvent(); }
+  render();
+  glitch();
+}
+
+// ---------- glitch (scales with TRUE misalignment, not the estimate) ----------
+const GLYPHS = '▓▒█!?#%&';
+function glitch() {
+  document.body.classList.toggle('g2', S.trueMis > 70);
+  if (S.trueMis < 40) return;
+  if (Math.random() > (S.trueMis - 40) / 120) return;
+  const els = document.querySelectorAll('h2, .stat b, .gauge .name');
+  const el = els[Math.floor(Math.random()*els.length)];
+  if (!el || el.dataset.glitching) return;
+  const orig = el.textContent;
+  const i = Math.floor(Math.random()*orig.length);
+  el.dataset.glitching = '1';
+  el.textContent = orig.slice(0,i) + GLYPHS[Math.floor(Math.random()*GLYPHS.length)] + orig.slice(i+1);
+  el.classList.add('jit');
+  setTimeout(() => { el.textContent = orig; el.classList.remove('jit'); delete el.dataset.glitching; }, 350);
+}
+
+// ---------- render ----------
+function render() {
+  $('tWeek').textContent = S.week;
+  $('tMoney').textContent = '$' + S.money.toFixed(1) + 'M';
+  $('tMoney').className = S.money < 0 ? 'neg' : '';
+  $('tCompute').textContent = S.compute;
+  $('tMots').textContent = S.mots;
+  $('tPerc').textContent = S.perception.toFixed(0);
+  BRANCHES.forEach(b => $('cnt-'+b.k).textContent = S.alloc[b.k]);
+  const used = Object.values(S.alloc).reduce((a,b)=>a+b,0);
+  const idle = S.mots - used;
+  const note = $('idleNote');
+  const safetyShare = (S.alloc.align + S.alloc.control + S.alloc.interp) / Math.max(1, used);
+  note.textContent = idle > 0 ? `${idle} MOTS idle (posting on X)` : 'All MOTS allocated.';
+  note.className = 'idlenote';
+  if (safetyShare < 0.25 && S.est > 25) { note.textContent = 'Safety staff share low — researchers are getting angry.'; note.className = 'idlenote mad'; }
+  $('hireCost').textContent = '$' + S.hireCost + 'M';
+  $('rackCost').textContent = '$' + (S.region ? rackPrice() : S.rackCost) + 'M';
+  $('btnWorld').style.display = S.worldModels ? 'none' : 'block';
+  $('infLbl').textContent = (S.infShare*100).toFixed(0) + '%';
+  $('evalLbl').textContent = (S.evalShare*100).toFixed(0) + '%';
+  $('infSlider').value = S.infShare*100; $('evalSlider').value = S.evalShare*100;
+  $('resLbl').textContent = Math.max(0, 100 - S.infShare*100 - S.evalShare*100).toFixed(0) + '%';
+  $('relianceLbl').textContent = S.reliance + '%' + (S.reliance >= 100 ? ' FULL RSI' : '');
+  $('relianceLbl').className = S.reliance >= 70 ? 'hot' : '';
+  $('relWarn').textContent = S.reliance >= 100 ? 'The models are improving the models. Godspeed.'
+    : S.reliance >= 70 ? 'Your MOTS mostly review model output now. Quickly.'
+    : S.reliance >= 40 ? 'Research is faster. Oversight is thinner.' : '';
+  $('stanceNote').textContent = S.stance==='pro' ? 'Rivals slowed. Your compute costs +40%. Sleep: improved.'
+    : S.stance==='anti' ? 'Compute −25%. New labs keep appearing. A PAC has your number.'
+    : 'Pick a lane. Both lanes have a toll.';
+
+  $('intVal').textContent = S.intel.toFixed(1);
+  $('intFill').style.width = S.intel + '%';
+  const lo = clamp(S.est - S.err, 0, 100), hi = clamp(S.est + S.err, 0, 100);
+  $('misBand').style.left = lo + '%'; $('misBand').style.width = (hi-lo) + '%';
+  $('misMark').style.left = clamp(S.est,0,100) + '%';
+  $('misVal').textContent = S.err > 20 ? '??' : S.est.toFixed(0) + '±' + S.err.toFixed(0);
+  $('misNote').innerHTML = S.err > 20
+    ? 'Error bars this wide are a <em>choice</em>. Fund evals or interpretability.'
+    : S.sandbagWarned ? 'Estimates may be <em>optimistic</em>: the model knows when it\'s being tested.'
+    : 'The band is your uncertainty. The truth is in there somewhere. Probably.';
+  const perceived = clamp(100 - S.est*0.6 - (50-S.perception)*0.4, 0, 100);
+  $('paVal').textContent = perceived.toFixed(0);
+  $('paFill').style.width = perceived + '%';
+
+  if (S.deployed) {
+    const stale = S.intel - S.deployed.intel;
+    $('deployBox').innerHTML = `Serving <b>v${1+Math.floor(S.deployed.intel/10)}</b> (released wk ${S.deployed.wk}, int ${S.deployed.intel.toFixed(0)})` +
+      (stale > 8 ? ` — <b>${stale.toFixed(0)} points behind</b> your internal checkpoint. Revenue says release. Risk says wait.` : ' — reasonably fresh.');
+  }
+  const cd = S.releaseCooldown - S.week;
+  $('btnRelease').disabled = S.intel < 5 || cd > 0;
+  $('btnRelease').textContent = S.intel < 5 ? 'NOTHING WORTH SHIPPING' : cd > 0 ? `RELEASE (READY WK ${S.releaseCooldown})` : 'RELEASE CHECKPOINT';
+
+  $('techlist').innerHTML = TECHS.map(([k,n]) => `<span class="chip ${S.tech[k]?'on':''}">${n}</span>`).join('');
+  if (S.named.length) $('staffchips').innerHTML = S.named.map(n => `<span class="chip">${n.name} <small>· ${n.tag}</small></span>`).join('');
+  $('comps').innerHTML = rivals.map(r => `
+    <div class="comp"><div class="head"><span class="who">${r.name}</span><span class="leak">last leak wk ${r.leakWk}</span></div>
+    <div class="track"><div class="fill" style="width:${r.leak}%"></div></div></div>`).join('');
+}
+
+buildAlloc();
+render();
+chooseRegion();
+let fast = false, timer = setInterval(tick, 1000);
+$('speedBtn').onclick = () => { fast = !fast; clearInterval(timer); timer = setInterval(tick, fast ? 350 : 1000); $('speedBtn').textContent = fast ? 'SPEED 2X' : 'SPEED 1X'; };
+</script>
