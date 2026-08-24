@@ -1,0 +1,25 @@
+{
+  "name": "idle-v1",
+  "private": true,
+  "packageManager": "bun@1.2.21",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run dev:game",
+    "dev:game": "bun run --filter @idle-v1/game dev",
+    "dev:components": "bun run --filter @idle-v1/storybook dev",
+    "storybook": "bun run dev:components",
+    "test": "bun test",
+    "typecheck": "bun run --filter '@idle-v1/*' --if-present typecheck",
+    "build": "bun run --filter @idle-v1/game build && bun run --filter @idle-v1/storybook build",
+    "simulate": "bun run packages/game-testkit/src/example.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.8",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "typescript": "^7.0.2"
+  }
+}

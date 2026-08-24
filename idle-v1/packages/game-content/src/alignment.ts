@@ -1,0 +1,88 @@
+import type { GameContent } from "@idle-v1/game-core";
+
+export const alignmentContent = {
+  id: "alignment-v1",
+  saveVersion: 1,
+  title: "Alignment",
+  subtitle: "Build the smartest system in history. Try to still understand it.",
+  balance: {
+    tickMs: 100,
+    millisecondsPerWeek: 8_000,
+    startingCash: 25_000_000,
+    startingCompute: 100,
+    startingResearchers: 8,
+    startingMisalignment: 24,
+    hireBaseCost: 2_000_000,
+    computeBaseCost: 8_000_000,
+    computePurchaseSize: 20,
+    capabilityRate: 0.048,
+    alignmentRate: 0.027,
+    interpretationRate: 0.045,
+    evalRate: 0.032,
+    automationMultiplier: 3.5,
+    automationRisk: 0.055,
+    releasedModelRevenue: 6_500,
+  },
+  departments: [
+    {
+      id: "alignment",
+      name: "Alignment",
+      shortName: "ALN",
+      description: "Reduces the hidden failure pressure inside the model.",
+      accent: "#70e1b2",
+    },
+    {
+      id: "capabilities",
+      name: "Capabilities",
+      shortName: "CAP",
+      description: "Raises intelligence and makes the next release worth more.",
+      accent: "#f3c96b",
+    },
+    {
+      id: "interpretability",
+      name: "Interpretability",
+      shortName: "INT",
+      description: "Shrinks the uncertainty around estimated misalignment.",
+      accent: "#ad92ff",
+    },
+    {
+      id: "evals",
+      name: "Evaluations",
+      shortName: "EVL",
+      description: "Improves measurement quality and preserves public trust.",
+      accent: "#6ec8ff",
+    },
+  ],
+  milestones: [
+    {
+      id: "useful-assistant",
+      name: "Useful assistant",
+      description: "The model is valuable enough to release. That does not make it safe.",
+      intelligenceRequired: 10,
+    },
+    {
+      id: "research-automation",
+      name: "Research automation",
+      description: "The model can meaningfully accelerate its own development.",
+      intelligenceRequired: 30,
+    },
+    {
+      id: "frontier-model",
+      name: "Frontier model",
+      description: "Every major institution is now watching the lab.",
+      intelligenceRequired: 55,
+    },
+    {
+      id: "recursive-improvement",
+      name: "Recursive improvement",
+      description: "Human-speed oversight has become a strategic choice.",
+      intelligenceRequired: 80,
+    },
+    {
+      id: "asi",
+      name: "Artificial superintelligence",
+      description: "The scoreboard was never the hard part.",
+      intelligenceRequired: 100,
+    },
+  ],
+} as const satisfies GameContent;

@@ -1,0 +1,16 @@
+{
+  "name": "@idle-v1/game-testkit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@idle-v1/game-content": "workspace:*",
+    "@idle-v1/game-core": "workspace:*"
+  }
+}
