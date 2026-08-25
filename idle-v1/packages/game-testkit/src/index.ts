@@ -3,6 +3,7 @@ import {
   applyCommand,
   createInitialState,
   totalAllocated,
+  totalEmployees,
   type GameCommand,
   type GameContent,
   type GameState,
@@ -21,7 +22,7 @@ export interface ScenarioCheckpoint {
   intelligence: number;
   trueMisalignment: number;
   uncertainty: number;
-  researchers: number;
+  employees: number;
 }
 
 export interface ScenarioResult {
@@ -30,8 +31,8 @@ export interface ScenarioResult {
 }
 
 export function assertInvariants(state: GameState): void {
-  if (totalAllocated(state.allocation) > state.researchers) {
-    throw new Error("Invariant failed: allocations exceed researcher count");
+  if (totalAllocated(state.allocation) > totalEmployees(state)) {
+    throw new Error("Invariant failed: allocations exceed employee count");
   }
   if (state.cash < 0) throw new Error("Invariant failed: cash is negative");
   if (state.intelligence < 0 || state.intelligence > 100) {
@@ -65,7 +66,7 @@ export function runScenario(
       intelligence: state.intelligence,
       trueMisalignment: state.trueMisalignment,
       uncertainty: state.uncertainty,
-      researchers: state.researchers,
+      employees: totalEmployees(state),
     });
   }
 

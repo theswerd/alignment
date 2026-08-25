@@ -14,6 +14,8 @@
       "name": "@idle-v1/game",
       "version": "0.1.0",
       "dependencies": {
+        "@idle-v1/game-content": "workspace:*",
+        "@idle-v1/game-core": "workspace:*",
         "@idle-v1/game-ui": "workspace:*",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",

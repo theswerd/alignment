@@ -1,4 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["vite/client"]
+  },
   "include": [".storybook", "../../packages/game-ui/src/**/*.stories.tsx"]
 }

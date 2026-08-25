@@ -10,12 +10,18 @@ export function createInitialState(content: GameContent, seed = 0x1d1e): GameSta
     evals: 0,
   };
   const departments = Object.keys(allocation) as (keyof Allocation)[];
-  for (let researcher = 0; researcher < content.balance.startingResearchers; researcher += 1) {
+  const startingEmployeeCount = Object.values(content.balance.startingEmployees).reduce(
+    (total, count) => total + count,
+    0,
+  );
+  for (let researcher = 0; researcher < startingEmployeeCount; researcher += 1) {
     const department = departments[researcher % departments.length];
     if (department) allocation[department] += 1;
   }
 
   const state: GameState = {
+    acceptedInvestorIds: [],
+    dismissedInvestorIds: [],
     saveVersion: content.saveVersion,
     contentId: content.id,
     seed,
@@ -23,8 +29,8 @@ export function createInitialState(content: GameContent, seed = 0x1d1e): GameSta
     nextTraceId: 1,
     clock: { elapsedMs: 0, accumulatorMs: 0, week: 1, speed: 1 },
     cash: content.balance.startingCash,
-    compute: content.balance.startingCompute,
-    researchers: content.balance.startingResearchers,
+    computeCounts: { ...content.balance.startingCompute },
+    employeeCounts: { ...content.balance.startingEmployees },
     allocation,
     intelligence: 2,
     trueMisalignment: content.balance.startingMisalignment,
@@ -32,19 +38,64 @@ export function createInitialState(content: GameContent, seed = 0x1d1e): GameSta
     uncertainty: 34,
     publicTrust: 50,
     releasedIntelligence: 0,
+    research: 0,
     automation: 0,
     unlockedMilestones: [],
     trace: [],
     stats: {
       cashEarned: 0,
       cashSpent: 0,
-      researchersHired: 0,
+      employeesHired: 0,
       checkpointsReleased: 0,
       ticksSimulated: 0,
     },
   };
 
   return appendTrace(state, "system", "Simulation initialized", { seed });
+}
+
+export function ensureClassInventories(state: GameState, content: GameContent): GameState {
+  const legacy = state as GameState & {
+    compute?: number;
+    dismissedInvestorIds?: string[];
+    researchers?: number;
+    stats: GameState["stats"] & { researchersHired?: number };
+  };
+  if (
+    state.computeCounts &&
+    state.employeeCounts &&
+    legacy.dismissedInvestorIds &&
+    state.saveVersion === content.saveVersion
+  ) {
+    return state;
+  }
+
+  const employeeClassId = content.employeeClasses[0]?.id;
+  const computeClassId = content.computeClasses[0]?.id;
+  if (!employeeClassId || !computeClassId) {
+    throw new Error("Game content must define at least one employee and compute class");
+  }
+
+  return {
+    ...state,
+    saveVersion: content.saveVersion,
+    dismissedInvestorIds: legacy.dismissedInvestorIds ?? [],
+    employeeCounts: {
+      ...(state.employeeCounts ?? {
+        [employeeClassId]:
+          legacy.researchers ?? content.balance.startingEmployees[employeeClassId] ?? 0,
+      }),
+    },
+    computeCounts: {
+      ...(state.computeCounts ?? {
+        [computeClassId]: legacy.compute ?? content.balance.startingCompute[computeClassId] ?? 0,
+      }),
+    },
+    stats: {
+      ...state.stats,
+      employeesHired: legacy.stats.employeesHired ?? legacy.stats.researchersHired ?? 0,
+    },
+  };
 }
 
 export function appendTrace(

@@ -1,11 +1,8 @@
 import type { ReactNode } from "react";
 
 export const GAME_SECTIONS = [
-  { id: "overview", label: "Overview", glyph: "⌂" },
-  { id: "research", label: "Research", glyph: "✦" },
-  { id: "models", label: "Models", glyph: "M" },
-  { id: "compute", label: "Compute", glyph: "⚙" },
-  { id: "world", label: "World", glyph: "◎" },
+  { id: "overview", label: "Home", glyph: "⌂" },
+  { id: "settings", label: "Settings", glyph: "⚙" },
 ] as const;
 
 export type GameSectionId = (typeof GAME_SECTIONS)[number]["id"];
@@ -156,23 +153,166 @@ export function OpeningDialog({
             </button>
           </div>
         </form>
+        <footer className="idle-opening__disclaimer">
+          Any resemblance to real people, organizations, or events is entirely coincidental.
+        </footer>
       </section>
     </div>
   );
 }
 
+export interface LabOverviewProps {
+  canBuyCompute?: boolean;
+  canRemoveEmployee?: boolean;
+  canSellCompute?: boolean;
+  compute: string;
+  computeDescription?: string;
+  employeeClassName?: string;
+  employeeCount: number;
+  employeeDescription?: string;
+  gpuCost?: string;
+  gpuPurchaseSize?: number;
+  gpuModel?: string;
+  gpuSellValue?: string;
+  onAddEmployee?: () => void;
+  onBuyCompute?: () => void;
+  onRemoveEmployee?: () => void;
+  onSellCompute?: () => void;
+  region: LabRegion;
+  researchGoal?: number;
+  researchProgress?: number;
+  weeklyPayroll?: string;
+}
+
+export function LabOverview({
+  canBuyCompute = true,
+  canRemoveEmployee = false,
+  canSellCompute = false,
+  compute,
+  computeDescription = "7 TFLOPS FP32 per card · no ongoing cost.",
+  employeeClassName = "Research Scientist",
+  employeeCount,
+  employeeDescription = "16:1 GPU ratio · 2.00× GPU boost · +2.0 research / wk.",
+  gpuCost = "$80K",
+  gpuPurchaseSize = 4,
+  gpuModel = "Titan X GPU",
+  gpuSellValue = "$0",
+  onAddEmployee,
+  onBuyCompute,
+  onRemoveEmployee,
+  onSellCompute,
+  region,
+  researchGoal = 10,
+  researchProgress = 0,
+  weeklyPayroll = "$3,462",
+}: LabOverviewProps) {
+  const progress = Math.max(0, Math.min(100, (researchProgress / researchGoal) * 100));
+  const displayedResearch = Number.isInteger(researchProgress)
+    ? String(researchProgress)
+    : researchProgress.toFixed(1);
+
+  return (
+    <section className="idle-lab-overview" aria-label={`Lab operations in ${region}`}>
+      <section className="idle-home-loop" aria-labelledby="idle-home-loop-title">
+        <header>
+          <div>
+            <span>Day-to-day</span>
+            <h2 id="idle-home-loop-title">Lab operations</h2>
+          </div>
+          <small>Grow the resources that keep the lab moving.</small>
+        </header>
+        <div className="idle-home-loop__actions">
+          <article data-action="hiring">
+            <div className="idle-home-loop__details">
+              <div className="idle-home-loop__heading">
+                <h3>{employeeClassName}</h3>
+                <span>Employee</span>
+              </div>
+              <p>{employeeDescription}</p>
+            </div>
+            <div className="idle-home-loop__staffing">
+              <small>{weeklyPayroll} / wk</small>
+              <div className="idle-home-loop__dial" role="group" aria-label="Researcher count">
+                <button
+                  type="button"
+                  aria-label="Remove one researcher"
+                  disabled={!canRemoveEmployee}
+                  onClick={onRemoveEmployee}
+                >
+                  −1
+                </button>
+                <strong>{employeeCount}</strong>
+                <button type="button" aria-label="Add one researcher" onClick={onAddEmployee}>
+                  +1
+                </button>
+              </div>
+            </div>
+          </article>
+          <article data-action="compute">
+            <div className="idle-home-loop__details">
+              <div className="idle-home-loop__heading">
+                <h3>{gpuModel}</h3>
+                <span>Compute</span>
+              </div>
+              <p>{computeDescription}</p>
+            </div>
+            <div className="idle-home-loop__compute-trade">
+              <div
+                className="idle-home-loop__dial idle-home-loop__dial--compute"
+                role="group"
+                aria-label="GPU count"
+              >
+                <button type="button" disabled={!canSellCompute} onClick={onSellCompute}>
+                  Sell {gpuPurchaseSize} · {gpuSellValue}
+                </button>
+                <strong>{compute}</strong>
+                <button type="button" disabled={!canBuyCompute} onClick={onBuyCompute}>
+                  Buy {gpuPurchaseSize} · {gpuCost}
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+      <section className="idle-research-unlock" aria-labelledby="idle-research-unlock-title">
+        <div className="idle-research-unlock__copy">
+          <span>Next research unlock</span>
+          <strong id="idle-research-unlock-title">First investor visit</strong>
+        </div>
+        <div className="idle-research-unlock__meter">
+          <div aria-hidden="true">
+            <span style={{ width: `${progress}%` }} />
+          </div>
+          <small>{displayedResearch} / {researchGoal} research</small>
+        </div>
+        <span className="idle-research-unlock__locked" data-unlocked={progress >= 100 || undefined}>
+          {progress >= 100 ? "Unlocked" : "Locked"}
+        </span>
+      </section>
+    </section>
+  );
+}
+
 export interface GameHeaderProps {
+  cash?: string;
   day?: number;
+  flops?: string;
+  runway?: string;
+  runwayCritical?: boolean;
   season?: string;
   title?: string;
   year?: number;
 }
 
 export function GameHeader({
-  day = 118,
-  season = "Autumn",
+  cash = "$5.00M",
+  day = 1,
+  flops = "112 TFLOPS",
+  runway = "27.8 yr",
+  runwayCritical = false,
+  season = "Winter",
   title = "Lantern Laboratory",
-  year = 2,
+  year = 2014,
 }: GameHeaderProps) {
   return (
     <header className="idle-game-header">
@@ -180,8 +320,22 @@ export function GameHeader({
       <div className="idle-game-header__copy">
         <strong>{title}</strong>
         <span>
-          Day {day} · {season}, Year {year}
+          Day {day} · {season}, {year}
         </span>
+      </div>
+      <div className="idle-game-header__metrics" aria-label="Lab metrics">
+        <div className="idle-game-header__metric" data-critical={runwayCritical || undefined}>
+          <span>Runway</span>
+          <strong>{runway}</strong>
+        </div>
+        <div className="idle-game-header__metric">
+          <span>Compute</span>
+          <strong>{flops}</strong>
+        </div>
+        <div className="idle-game-header__metric">
+          <span>Cash in bank</span>
+          <strong>{cash}</strong>
+        </div>
       </div>
     </header>
   );

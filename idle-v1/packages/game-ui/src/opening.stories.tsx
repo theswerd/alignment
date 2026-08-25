@@ -14,7 +14,7 @@ function OpeningWorkbench() {
 
   return (
     <>
-      <GameShell activeSection="research" title={labName} />
+      <GameShell activeSection="overview" title={labName} />
       <OpeningDialog
         labName={labName}
         region={region}

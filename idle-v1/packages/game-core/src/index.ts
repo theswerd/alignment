@@ -1,4 +1,5 @@
 export * from "./commands";
+export * from "./investor-events";
 export * from "./random";
 export * from "./selectors";
 export * from "./serialization";

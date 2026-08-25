@@ -14,12 +14,11 @@ export interface BalanceDefinition {
   tickMs: number;
   millisecondsPerWeek: number;
   startingCash: number;
-  startingCompute: number;
-  startingResearchers: number;
+  startingCompute: Readonly<Record<string, number>>;
+  startingEmployees: Readonly<Record<string, number>>;
   startingMisalignment: number;
-  hireBaseCost: number;
-  computeBaseCost: number;
-  computePurchaseSize: number;
+  worldEndingMinimumWeek: number;
+  worldEndingResearch: number;
   capabilityRate: number;
   alignmentRate: number;
   interpretationRate: number;
@@ -36,13 +35,35 @@ export interface MilestoneDefinition {
   intelligenceRequired: number;
 }
 
+export interface EmployeeClassDefinition {
+  id: string;
+  name: string;
+  description: string;
+  annualSalary: number;
+  baselineFlops: number;
+  researchPerWeek: number;
+}
+
+export interface ComputeClassDefinition {
+  id: string;
+  name: string;
+  description: string;
+  releaseYear: number;
+  flopsPerUnit: number;
+  precisionLabel: string;
+  baseCost: number;
+  purchaseSize: number;
+}
+
 export interface GameContent {
   id: string;
   saveVersion: number;
   title: string;
   subtitle: string;
   balance: BalanceDefinition;
+  computeClasses: readonly ComputeClassDefinition[];
   departments: readonly DepartmentDefinition[];
+  employeeClasses: readonly EmployeeClassDefinition[];
   milestones: readonly MilestoneDefinition[];
 }
 
@@ -58,7 +79,7 @@ export interface GameClock {
 export interface GameStats {
   cashEarned: number;
   cashSpent: number;
-  researchersHired: number;
+  employeesHired: number;
   checkpointsReleased: number;
   ticksSimulated: number;
 }
@@ -74,6 +95,8 @@ export interface TraceEntry {
 }
 
 export interface GameState {
+  acceptedInvestorIds: string[];
+  dismissedInvestorIds: string[];
   saveVersion: number;
   contentId: string;
   seed: number;
@@ -81,8 +104,8 @@ export interface GameState {
   nextTraceId: number;
   clock: GameClock;
   cash: number;
-  compute: number;
-  researchers: number;
+  computeCounts: Record<string, number>;
+  employeeCounts: Record<string, number>;
   allocation: Allocation;
   intelligence: number;
   trueMisalignment: number;
@@ -90,6 +113,7 @@ export interface GameState {
   uncertainty: number;
   publicTrust: number;
   releasedIntelligence: number;
+  research: number;
   automation: number;
   unlockedMilestones: string[];
   trace: TraceEntry[];
@@ -98,8 +122,10 @@ export interface GameState {
 
 export type GameCommand =
   | { type: "allocate"; department: DepartmentId; researchers: number }
-  | { type: "hire" }
-  | { type: "buy-compute" }
+  | { type: "hire"; employeeClassId: string }
+  | { type: "fire"; employeeClassId: string }
+  | { type: "buy-compute"; computeClassId: string }
+  | { type: "sell-compute"; computeClassId: string }
   | { type: "release-checkpoint" }
   | { type: "set-automation"; value: number }
   | { type: "set-speed"; speed: GameSpeed }
